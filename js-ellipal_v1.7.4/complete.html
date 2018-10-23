@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Complete</title>
+	<meta name="renderer" content="webkit">
+  	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./css/reset.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+
+	<style type="text/css">
+	.complete-box{position: relative; width: 88%; margin: 0 auto;}
+	.complete-box p{ padding: .4rem 0;}
+	.font-s{}
+	.font-l{font-size: .4rem}
+	.font-b{font-weight: bold;}
+	.font-xl{ font-size: .8rem}
+	</style>
+</head>
+<body>
+	<div class="complete">
+		<div class="complete-box">
+			<div class="top-banner">
+		    	Done
+			</div>
+			<div class="main-body">
+				<p class="center font-l" id="valueType">--</p>
+				<h1 class="center font-xl font-b" id="valueNum">--</h1>
+				<p class="center font-l">Transaction submitted</p>
+				<button class="layui-btn layui-btn-normal" id="complete-btn">Done</button>
+			</div>
+		</div>
+	</div>
+	
+	<script type="text/javascript" src="./js/jquery.min.js"></script>
+  	<script type="text/javascript" src="./js/Ellipal.js"></script>
+  	<script type="text/javascript" src="./js/Global.js"></script>
+  	<script type="text/javascript" src="./js/Utils.js"></script>
+
+	<script type="text/javascript">
+		var Complete = {
+			init: function(){
+				this.setUi();
+				this.setClick();
+			},
+			setUi: function(){
+				var value = sessionStorage["amount"];
+				var type = sessionStorage["cType"];
+				var decimal = sessionStorage["decimal"];
+				$("#valueNum").html(utils.toNonExponential(value / Math.pow(10, decimal)));
+				$("#valueType").html(type);
+			},
+			setClick: function(){
+				$("#complete-btn").on("click", function(){
+					for( var i = 0; i < ell.STORAGE_CLEAR_ARRAY.length; i++){
+                        sessionStorage[ell.STORAGE_CLEAR_ARRAY[i]] = "";
+                    }
+					window.location.href = "index.html";
+				})
+			}
+		}
+		Complete.init();
+	</script>
+</body>
+</html>

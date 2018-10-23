@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Transfer</title>
+	<meta name="renderer" content="webkit">
+  	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./css/reset.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/powerange.css"  media="all">
+
+	<style type="text/css">
+	.transfer-box{width: 88%;margin: 0 auto;}
+	.slide-box{ position: relative;}
+	.slide-box .tip-slow{ position: absolute; left: 0; top: .25rem }
+	.slide-box .tip-fast{ position: absolute; right: 0; top: .25rem }
+	#slider-tips{ text-align: center;}
+		
+	.range-bar{ width: calc(100% - 78px); margin: 0 auto}
+	.slider-wrapper{padding: .4rem 0;}
+	.range-quantity{background-color:#1E9FFF;}
+	</style>
+</head>
+<body>
+	<div class="transfer">
+		
+		<div class="transfer-box">
+			<div class="top-banner">
+		        <button class="layui-btn layui-btn-normal layui-btn-sm fl" onClick="window.location.href = 'index.html'">Return</button>
+		        Send
+		        <div class="fr"></div>
+		    </div>
+
+			<div class="main-body">
+				<input type="hidden" name="account-url" class="layui-input" autocomplete="off">
+
+				<p>Balance:<span id="balance">--</span></p>
+				<div class="layui-inline layui-form-pane box-flex-row">
+			        <label class="layui-form-label"id="accountType"></label>
+		        	<div class="layui-input-inline box-row-1">
+		        		<input type="number" name="" class="layui-input" step="0.000000000000000001" id="transfer-amount" autocomplete="off" placeholder="Amount">
+			        </div>
+			    </div>
+				<p>Recipient address</p>
+				<input type="text" name="" class="layui-input" id="transfer-dAddress" autocomplete="off" placeholder="Recipient address" value="">
+				<p>Miner fee<span class="fr" id="transfe-cost">--</span></p>
+				<div class="slide-box">
+					<div class="slider-wrapper">
+						<span class="tip-slow fl"> Slow </span>
+			            <input type="text" class="js-range" />
+						<span class="tip-fast fr"> Fast </span>	
+			        </div>
+				</div>
+				<div id="slider-tips"></div>
+				<input type="hidden" name="" class="layui-input" id="fee" autocomplete="off">
+				<button class="layui-btn layui-btn-normal sure-btn">Confirm</button>
+			</div>
+		</div>
+
+	</div>
+
+    <script type="text/javascript" src="./js/lib/layer_mobile/layer.js"></script>
+  	<script type="text/javascript" src="./js/jquery.min.js"></script>
+  	<script type="text/javascript" src="./js/Ellipal.js"></script>
+  	<script type="text/javascript" src="./js/Global.js"></script>
+  	<script type="text/javascript" src="./js/Utils.js"></script>
+  	<script type="text/javascript" src="./js/lib/powerange/powerange.min.js"></script>
+	<script type="text/javascript">
+	(function(){
+		function displayValue() {
+			// alert(elem.value);
+		    $("#slider-tips").html(utils.toNonExponential(accDiv(elem.value, Math.pow(10, awei))));
+			$("#transfe-cost").html((accDiv(elem.value, utils.toNonExponential(Math.pow(10, awei))) * gasMul).toFixed(8) + gasUnit);
+			$("#fee").val(elem.value);
+		}
+
+		var elem = document.querySelector('.js-range');
+		var gasMul, gasUnit, decimal, awei; //指数，类型字符串, 转账币种机位, 矿工费机位
+		//aType:ETH, bType:ERC, cType:POLY
+		var Transfer = {
+			aType: undefined,
+			bType: undefined,
+			cType: undefined,
+			balance: undefined,
+			cAddress: undefined,
+			oAddress: undefined,
+			contractAddr: undefined,
+			dAddress: undefined,
+			fee: undefined,
+			amount: undefined,
+			remark: undefined,
+			init: function(){
+				this.setUi();
+				this.setClick();
+			},
+			setUi: function(){
+				this.aType = GetQueryString("accountType");
+				this.bType = GetQueryString("bType");
+				this.cType = GetQueryString("cType");
+				this.balance = GetQueryString("balance");
+				this.cAddress = GetQueryString("address");
+				this.oAddress = GetQueryString("oldaddrcess");
+				this.contractAddr = GetQueryString("contractAddr");
+				decimal = GetQueryString("decimal");
+				$("#accountType").html(this.cType);
+				$("#balance").html(utils.toFixNum(this.balance, true));
+				$("input[name='account-url']").val(this.cAddress);
+				this.setSlide();
+			},
+			setClick: function(){
+				var self = this;
+				$(".sure-btn").on("click", function(){
+					self.sureTransfer();
+				})
+			},
+			setSlide: function(){
+				layer.open({
+				    type: 2
+				    ,content: 'loading…'
+				});
+				var data = ellipal.getAverageMinerFee("", this.aType);
+				if(data.status){
+					layer.closeAll();
+					var slideVaule = parseInt(data.data.gasPrice);
+					var minSlideVaule = slideVaule / 2;
+					var maxSlideVaule = slideVaule * 5;
+					gasMul = data.data.gasMul;
+					gasUnit = data.data.gasUnit;
+					awei = data.data.decimal;
+					var slide = new Powerange(elem, {
+						min: minSlideVaule,
+						max: maxSlideVaule,
+						start: slideVaule,
+						//step: 1,
+						hideRange: true,
+						callback: displayValue //or elem.onchange = function(){}
+					});
+				}else{
+					layer.open({
+					    content: data.code +':'+ data.msg
+					    ,btn: 'OK'
+					});
+					console.log("[Transfer] ajax fail:" + data.msg)
+				}
+			},
+			sureTransfer: function(){
+				var self = this;
+				var transferUrl;
+				self.dAddress = $("#transfer-dAddress").val();
+				self.fee = $("#fee").val();
+				self.amount = accMul($("#transfer-amount").val() , Math.pow(10, decimal));
+				self.remark = "";
+				if(!self.amount || self.amount + ".0" != self.amount || self.amount > accMul(utils.toNonExponential(this.balance), Math.pow(10, decimal))){
+					layer.open({
+						content: "Please enter a correct transfer amount!"
+                        ,btn: 'OK'
+                        ,end: function(){
+                        	layer.closeAll();
+                        }
+                    });
+                    return;
+				}
+				if(!self.dAddress){
+					layer.open({
+						content: "Please enter the address!"
+                        ,btn: 'OK'
+                        ,end: function(){
+                        	layer.closeAll();
+                        }
+                    });
+                    return;
+				}
+				if(self.dAddress === self.cAddress || self.dAddress === self.oAddress){
+					layer.open({
+						content: "Cannot transfer to the same address!"
+                        ,btn: 'OK'
+                        ,end: function(){
+                        	layer.closeAll();
+                        }
+                    });
+                    return;
+				}
+				var paramObj = {
+					httpType: "req",
+					cType: self.bType,
+					cAddress: self.cAddress,
+					dAddress: self.dAddress,
+					contractAddr: self.contractAddr, //ERC
+					fee: self.fee,
+					amount: self.amount,
+					remark: self.remark
+				};
+				layer.open({
+				    type: 2
+				    ,content: 'loading…'
+				});
+				var data = ellipal.prepareTx("", paramObj);
+				if(data.status){
+					layer.closeAll();
+					var tx = data.data.tx;
+					sessionStorage["cType"] = self.cType;
+					sessionStorage["cAddress"] = self.cAddress;
+					sessionStorage["dAddress"] = self.dAddress;
+					sessionStorage["contractAddr"] = self.contractAddr;
+					sessionStorage["fee"] = self.fee;
+					sessionStorage["amount"] = self.amount;
+					sessionStorage["decimal"] = decimal;
+					sessionStorage["gasUnit"] = gasUnit;
+					sessionStorage["remark"] = self.remark;
+					window.location.href = "sign.html?aType="+self.aType
+						+"&bType="+self.bType
+						+"&cType="+self.cType
+						+"&sign="+data.data.sign
+						+"&tx="+tx
+						+"&gasUnit="+gasUnit
+						+"&decimal="+decimal;
+					console.log("[Transfer] ajax succ:"+ JSON.stringify(data));
+				}else{
+					layer.open({
+						content: data.code +':'+ data.msg
+                        ,btn: 'OK'
+                        ,end: function(){
+                        	layer.closeAll();
+                        }
+                    });
+					console.log("[Transfer] ajax fail:" + data.msg)
+				}
+			}
+		}
+		Transfer.init();
+	})();
+
+	
+	</script>
+</body>
+</html>

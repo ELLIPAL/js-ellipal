@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Sign</title>
+	<meta name="renderer" content="webkit">
+  	<meta http-equiv="Access-Control-Allow-Origin" content="*" />
+  	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./css/reset.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+
+	<style type="text/css">
+	.sign-box{width: 88%;margin: 0 auto;}
+	.sign-box p{ padding: .6rem 0;}
+	.qr-code canvas{ width: 200px; height: 200px;}
+	#sign-btn{ position: fixed; bottom: .2rem; width: 88%}
+
+	/* focus css -------------------------------------- */
+	.focus{ width:230px; height:205px;  margin:0 auto; position:relative;  }
+	.focus .hd{ width:100%; height:11px;  position:absolute; z-index:1; bottom:-20px; text-align:center;  }
+	.focus .hd ul{ display:inline-block; height:5px; padding:3px 5px; background-color:rgba(255,255,255,0.7); 
+		-webkit-border-radius:5px; -moz-border-radius:5px; border-radius:5px; font-size:0; vertical-align:top;
+	}
+	.focus .hd ul li{ display:inline-block; width:5px; height:5px; -webkit-border-radius:5px; -moz-border-radius:5px; border-radius:5px; background:#8C8C8C; margin:0 5px;  vertical-align:top; overflow:hidden;   }
+	.focus .hd ul .on{ background:#FE6C9C;  }
+
+	.focus .bd{ position:relative; z-index:0; }
+	.focus .bd li img{ width:100%;  height:140px;   }
+	.focus .bd li a{ -webkit-tap-highlight-color:rgba(0, 0, 0, 0);}
+
+	.focus .prev,.focus .next{ display:block;  width:25px; height:200px; margin-top: -209px;line-height: 200px; overflow:hidden;  }
+	.focus .prev{ float: left; margin-left:-30px;}
+	.focus .next{ float:right; margin-right:-30px;}
+	.focus .prev img,.focus .next img{width:100%; }
+
+	.pageState{ text-align: center; margin-top:.2rem;}
+	
+	</style>
+</head>
+<body>
+	<div class="sign">
+		
+		<div class="sign-box">
+			<div class="top-banner">
+				<button class="layui-btn layui-btn-normal layui-btn-sm fl" onClick="window.location.href = 'index.html'">Return</button>
+				Sign
+				<div class="fr"></div>
+			</div>
+
+			<div class="main-body">
+				<p class="center">Please use the cold wallet to scan the Unsigned Data QR Code</p>
+				<div class="code-focus">
+					<div id="focus" class="focus">
+						<div class="hd none">
+							<span class="next"><img src="img/right.png"></span>
+							<!-- <ul></ul> -->
+							<span class="prev"><img src="img/left.png"></span>
+						</div>
+						<div class="bd">
+							<ul class="code-ul">
+								<li><div class="qr-code center"></div></li>
+								<li><div class="qr-code center"></div></li>
+								<li><div class="qr-code center"></div></li>
+							</ul>
+						</div>
+					</div>
+					<div class="pageState"></div>
+				</div>				
+
+				<p class="center" style="padding-bottom:0">After successful scanning, please scan "Signed Data QR code" on Cold Wallet</p>
+			</div>
+			<button class="layui-btn layui-btn-normal center" id="sign-btn">Scan</button>
+		</div>	
+	</div>
+
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/lib/scan/jquery.qrcode.min.js"></script>
+    <script type="text/javascript" src="./js/lib/touchSlide/TouchSlide.1.1.js"></script>
+    <script type="text/javascript" src="./js/Ellipal.js"></script>
+    <script type="text/javascript" src="./js/Global.js"></script>
+  	<script type="text/javascript" src="./js/Utils.js"></script>
+  	<script type="text/javascript" src="./js/Base64.js"></script>
+
+	<script type="text/javascript">
+		var len = 140;
+		var Sign = {
+			aType: undefined,
+			bType: undefined,
+			cType: undefined,
+			sign: undefined,
+			tx: undefined,
+			gasUnit: undefined,
+			decimal: undefined,
+			cAddress: undefined,
+			init: function(){
+				this.setUi();
+				this.setClick();
+			},
+			setUi: function(){
+				sessionStorage["tx_unsigned"] = GetQueryString("tx");
+				this.aType = GetQueryString("aType");
+				this.bType = GetQueryString("bType");
+				this.cType = GetQueryString("cType");
+				this.sign = GetQueryString("sign");
+				this.tx = utils.trim(Base.decodeByHexString(GetQueryString("tx")));
+				this.gasUnit = GetQueryString("gasUnit");
+				this.decimal = GetQueryString("decimal");
+				this.cAddress = sessionStorage["cAddress"];
+				console.log("[Sign] tx.length:"+this.tx.length);
+				this.setCode();
+			},
+			setClick: function(){
+				var self = this;
+				$("#sign-btn").on("click", function(){
+					window.location.href = "scan.html?scanType=" + ell.SCAN_TYPE_SIGN_QR_CODE
+							+"&aType="+self.aType
+							+"&bType="+self.bType
+							+"&cType="+self.cType
+							+"&sign="+self.sign;
+							+"&tx="+self.tx;
+					console.log("[Sign] turn to scan cold wallet！");
+				})
+			},
+			setCode: function(){
+				// $('.qr-code').qrcode(this.tx);
+				// $(".qr-code").qrcode({
+				// 	render: "canvas",
+				// 	width: 200,
+				// 	height:200,
+				// 	text: this.tx
+				// });
+				switch(this.bType){
+					case ell.ELLIPAL_COIN_TYPE_ETH :
+						len = 240;
+						break;
+					case ell.ELLIPAL_COIN_TYPE_ERC :
+						len = 240;
+						break;
+					case ell.ELLIPAL_COIN_TYPE_BTC :
+						break;
+					case ell.ELLIPAL_COIN_TYPE_BCH :
+						break;
+					default:
+						console.log("[Sign] unkonw transfer cType!");
+						break;
+				}
+				var self = this;
+				var codeCount = Math.ceil(self.tx.length / len);
+				$(".code-ul").children().remove();
+				for(var i = 0; i < codeCount; i++){
+					$(".code-ul").append('<li>'+
+						'<div class="qr-code center"></div>'+
+					'</li>');
+				}
+				if(codeCount < 2){
+					$(".code-ul .qr-code").eq(0).qrcode(ell.ELLIPAL_CODE_APP_TO_COLD.format(
+							"", 
+							self.aType, 
+							self.cAddress, 
+							self.tx,
+							self.cType,
+							self.decimal
+					));
+					$(".hd").hide();
+					return;
+				}
+				$(".hd").show();
+				TouchSlide({ 
+					slideCell:"#focus",
+					mainCell:".bd ul", 
+					effect:"left", 
+					autoPage:false, 
+					pageStateCell: ".pageState",
+					switchLoad:"_src" 
+				});
+				//set qrcode
+				for(var i = 0; i < codeCount; i++){
+					var str = ell.ELLIPAL_CODE_APP_TO_COLD.format(
+							ell.ELLIPAL_CODE_XX.format(i+1, codeCount), 
+							self.aType, 
+							self.cAddress, 
+							self.tx.substring(i * len, i * len + len),
+							self.cType,
+							self.decimal);
+					$(".code-ul .qr-code").eq(i).qrcode(str);
+				}
+			}
+		}
+		Sign.init();
+	</script>
+</body>
+</html>

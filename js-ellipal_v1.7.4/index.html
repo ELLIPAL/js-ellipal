@@ -1,0 +1,197 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+	<!--
+		(c)2018 Ellipal Limited
+		Web App demo & JavaScript Lib
+	-->
+	<meta charset="UTF-8">
+	<title>Home</title>
+	<meta name="renderer" content="webkit">
+  	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  	<meta http-equiv="Access-Control-Allow-Origin" content="*" />
+  	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./css/reset.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+
+	<style type="text/css">
+	.home{ max-width: 500px; margin: 0 auto}
+	.sync-box{position: relative; width: 88%; top: 4.5rem; margin: 0 auto;}
+	.sync-box button{ width:100%; height: 0.9rem; line-height: 0.9rem; font-size: .35rem}
+	.account-box{ padding: .2rem}
+
+	.panel{margin: 0 auto; overflow: hidden; background-color: #1E9FFF; color:#fff; padding: .2rem; border-radius: .2rem; margin-bottom: .2rem}
+	.accout-name{ font-size: .4rem; font-weight: bold; margin-bottom: .2rem;}
+	.accout-url,.accout-old-url{ word-break: break-all; word-wrap: break-word;}
+	.accout-total{font-weight: bold;}
+	.assets-img img{ width: 0.5rem; height: 0.5rem; margin: .34rem 5px}
+	.assets-list{ background-color: #f7f7f7;}
+	.assets-list li{ position: relative; height: 1.2rem; line-height: .6rem;padding: .05rem .2rem; border-bottom: 1px solid #ddd;cursor: pointer;}
+	.assets-name{ line-height: 1.2rem; font-size: .35rem}
+	.assets-count{ position: absolute; right: .4rem; top: .2rem;font-size: .35rem;}
+	.assets-worth{ position: absolute; right: .4rem; top: .6rem; color:#666;}
+	
+	</style>
+</head>
+<body>
+	<div class="home">
+		<div class="sync-box none">
+			<div class="main-body">
+				<button class="layui-btn layui-btn-normal" id="sync-btn">Connect Cold Wallet</button>
+			</div>
+		</div>
+
+		<div class="account-box none">
+			<div class="top-banner">
+				<button class="layui-btn layui-btn-normal layui-btn-sm fl reset">Exit</button>
+				Account  information
+				<button class="layui-btn layui-btn-normal layui-btn-sm fr refresh">Refresh</button>
+			</div>
+
+			<div class="main-body">
+				<div class="panel">
+					<div class="accout-name"></div>
+					<div class="accout-url"></div>
+					<div class="accout-old-url"></div>
+					<hr>
+					<div class="accout-total">Total Assets：$<span class="accout-assets"></span></div>
+				</div>
+				<button class="layui-btn layui-btn-normal" id="getBalance">Get the balance</button>
+				<ul class="assets-list">
+				</ul>
+			</div>
+		</div>
+	</div>
+
+    <script type="text/javascript" src="./js/lib/layer_mobile/layer.js"></script>
+  	<script type="text/javascript" src="./js/jquery.min.js"></script>
+	<script type="text/javascript" src="./js/Ellipal.js"></script>
+  	<script type="text/javascript" src="./js/Global.js"></script>
+  	<script type="text/javascript" src="./js/Utils.js"></script>
+
+	<script type="text/javascript">
+		var Home = {
+			elp: undefined,
+			init: function(){
+				this.setClick();
+				this.setUi();
+			},
+			setUi: function(){
+				this.elp = sessionStorage["elp"];
+				if(this.elp && ellipal.connectWallet(this.elp)){
+					var data = ellipal.connectWallet(this.elp);
+					 $(".sync-box").addClass("none");
+					 $(".account-box").removeClass("none");
+					 $(".accout-name").html("["+data.type+"] "+data.name);
+					 $(".accout-url").html(data.addr);
+					 $("#getBalance").removeClass("none");
+					 if(data.legacyAddr){
+					 	$(".accout-old-url").html("<hr>"+data.legacyAddr)
+					 }
+				}else{
+					 $(".sync-box").removeClass("none");
+					 $(".account-box").addClass("none");
+					 $("#getBalance").addClass("none");
+
+				}
+			},
+			setClick: function(){
+				var self = this;
+				$(document).on("click",".assets-li",function(e){
+					var accountType = $(this).data("type");
+					var bType = accountType;
+					var shortName = $(this).data("name");
+					var balance = $(this).data("balance");
+					var address = $(this).data("address");
+					var contractAddr = $(this).data("addr");
+					var decimal = $(this).data("decimal");
+					if(accountType === "ETH" && shortName !== "ETH"){
+						bType = "ERC"
+					}
+					var oldaddrcess = ellipal.connectWallet(self.elp).legacyAddr;
+					window.location.href = "transfer.html?accountType="+accountType
+							+"&balance="+balance
+							+"&address="+address
+							+"&oldaddrcess="+oldaddrcess
+							+"&contractAddr="+contractAddr
+							+"&bType="+bType
+							+"&cType="+shortName
+							+"&decimal="+decimal;
+				});
+				$(".reset").on("click", function(){
+					for(var i = 0; i < ell.STORAGE_CLEAR_ARRAY.length; i++){
+                        sessionStorage[ell.STORAGE_CLEAR_ARRAY[i]] = "";
+                    }
+                    sessionStorage["elp"] = "";
+					self.setUi();
+				})
+				$("#getBalance").on("click", function(){
+					self.updateBalance();
+				})
+				$(".refresh").on("click", function(){
+					self.updateBalance();
+				})
+				$("#sync-btn").on("click", function(){
+					if(CheckApiKey.check()){
+						window.location.href = "scan.html?scanType=" + ell.SCAN_TYPE_SYNC_COLD_WALLET;
+					}
+					else{
+						CheckApiKey.init();
+					}
+				})
+
+			},
+			updateBalance: function(){
+				var self = this;
+				var cType = ellipal.connectWallet(this.elp).type;
+				var walletAddress = ellipal.connectWallet(this.elp).addr;
+				var parmObj = {
+					cType: cType,
+					walletAddress: walletAddress
+				};
+				layer.open({
+				    type: 2
+				    ,content: 'loading…'
+				});
+				var data = ellipal.getBalance("", cType, walletAddress);
+				if(data.status){
+					layer.closeAll();
+					$("#getBalance").addClass("none");
+					var list = data.data.dataList;
+					$(".accout-assets").html(data.data.balanceTotalUSD);
+					$(".assets-list").children().remove();
+					for(var i = 0; i < list.length; i++){
+						$(".assets-list").append('<li class="assets-li"'+
+							' data-type="'+list[i].cType+ '"' +
+							' data-name="'+list[i].symbol+ '"' +
+							' data-balance="'+list[i].balance+ '"' +
+							' data-address="'+list[i].address+ '"' +
+							' data-addr="'+list[i].contractAddr+ '"' +
+							' data-decimal="'+list[i].decimal+ '"' +
+							'>'+
+							'<div class="fl assets-img"><img src="'+list[i].logo+'"/></div>'+
+							'<div class="fl assets-name">'+list[i].symbol+'</div>'+
+							'<div class="fr assets-count">'+utils.toFixNum(list[i].balance)+'</div>'+
+							'<div class="fr assets-worth">$'+list[i].usdValue+'</div>'+
+							'<span class="fr triangle_right"></span>'+
+						'</li>');	
+					}
+				}else{
+					layer.open({
+					    content: data.code +':'+ data.msg
+					    ,btn: 'OK'
+					    ,end: function(){
+					    	sessionStorage["elp"] = "";
+					    	self.setUi();
+					    }
+					});
+                }
+			},
+		}
+		Home.init();
+
+	</script>
+</body>
+</html>
