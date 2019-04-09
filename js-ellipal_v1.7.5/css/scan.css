@@ -1,0 +1,94 @@
+html, body{position: relative;padding: 0;margin: 0;height: 100%;width: 100%; max-width:500px;margin: 0 auto;overflow: hidden;background-color: #000}
+		
+		.row-element-set {
+	        position: absolute;
+	        display: flex;
+	        width: 100%;
+	        height: 100%;
+	        align-items: center; /*垂直居中*/
+	        justify-content: center;  /*左右居中*/
+	    }
+		.content{
+			position: relative;
+			height: 100%;
+	        overflow: hidden;
+		}
+	    .pip{
+	      position:relative;
+	      display: block;
+	      width: 70%;
+	      height: 0px;
+	      padding-bottom: 70%;
+	      background: url("../img/border.png") no-repeat;
+	      background-size: cover;
+	    }
+	    .box-cover-row{
+	    	display: flex;
+	        height: 100%;
+	        align-items: center; /*垂直居中*/
+	        justify-content: center;  /*左右居中*/
+	    }
+	    .box-cover-column{
+	      display: flex;
+		  height: 100%;
+		  align-items: center;
+		  justify-content: center;
+		  flex-wrap: wrap;    
+		  flex-direction: column;
+	    }
+	    .cover-img{
+	    	position: absolute;
+	    	height: 1005;
+	    	overflow: hidden;
+	    	padding-bottom: 100%;
+	    }
+		.content-cover{
+			position: absolute;
+			top: 0;
+		    left: 0;
+		    width: 100%;
+		    height: 100%;
+    		overflow: hidden;
+		}
+		.pip-row-half{
+			position:relative;
+	        display: block;
+	        width: 15%;
+	        height: 0px;
+	        padding-bottom: 70%;
+			background-color: rgba(0, 0, 0, .35);
+		}
+		.pip-column-half{
+			position:relative;
+	        display: block;
+	        width: 100%;
+			background-color: rgba(0, 0, 0, .35);
+			flex: 1;
+		}
+
+		/*动画*/
+	    .code-bg{
+            position: relative;
+            padding-bottom: 99%;
+            margin: 0px auto;
+        }
+        .line{
+            position: absolute;
+            z-index: 2;
+            height: 1.5px; 
+            width: 98%;
+            margin-left: 1%;
+            background-color:#00e0fb;
+            /*动画效果*/
+            animation: myScan 2s infinite; /*alternate 反向来回运动*/
+            -webkit-animation: myScan 2s infinite;
+        }
+        @keyframes  myScan{
+            from { top:0px; }
+            to { top: 100%; }
+        }
+        -webkit-@keyframes  myScan{
+            from { top:0px; }
+            to { top: 100%; }
+        }
+        

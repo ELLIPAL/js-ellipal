@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coin</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*" />
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <link rel="stylesheet" type="text/css" href="./css/reset.css">
+    <link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+    <link rel="stylesheet" type="text/css" href="./css/style.css">
+
+    <style type="text/css">
+    .account-name{width:calc(100% - 163px); position: absolute; left:80px;}
+    .panel{margin: 0.2rem auto; overflow: hidden; background-color: #1E9FFF; color:#fff; padding: .2rem; border-radius: .2rem; margin-bottom: .2rem;word-wrap: break-word;}
+
+    .assets-img img{ width: 0.5rem; height: 0.5rem; margin: .34rem 5px}
+    .assets-list{ background-color: #f7f7f7;}
+    .assets-list li{ position: relative; height: 1.2rem; line-height: .6rem;padding: .05rem .2rem; border-bottom: 1px solid #ddd;cursor: pointer;}
+    .assets-name{ line-height: 1.2rem; font-size: .35rem}
+    .assets-count{ position: absolute; right: .4rem; top: .2rem;font-size: .35rem;}
+    .assets-worth{ position: absolute; right: .4rem; top: .6rem; color:#666;}
+
+    </style>
+</head>
+<body>
+    <div class="coin">
+
+        <div class="account-box">
+            <div class="top-banner">
+                <button class="layui-btn layui-btn-normal layui-btn-sm fl" onClick="window.location.href = 'index.html'">Return</button>
+                <div class="account-name">Account  information</div>
+                <button class="layui-btn layui-btn-normal layui-btn-sm fr" id="getBalance">Refresh</button>
+            </div>
+
+            <div class="main-body">
+                <div class="panel">
+                    <div class="account-addr"></div>
+                    <!-- <hr/> -->
+                    <div class="account-oldAddress"></div>
+                </div>
+                <div class="panel">
+                    <div class="account-total">Total Assets：$<span class="account-assets"></span></div>
+                </div>
+
+                <div class="">
+                    <ul class="assets-list">
+                        <li></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="text/javascript" src="./js/lib/layer_mobile/layer.js"></script>
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/Ellipal.js"></script>
+    <script type="text/javascript" src="./js/Global.js"></script>
+    <script type="text/javascript" src="./js/Utils.js"></script>
+    <script type="text/javascript">
+        var Coin = {
+            aType: undefined,
+            cType: undefined,
+            cAddress: undefined,
+            oldAddress: undefined,
+            init: function(){
+                this.setUi();
+                this.setClick();
+            },
+            setUi: function(){
+                this.aType = GetQueryString("cType");
+                this.cType = GetQueryString("cType");
+                this.cAddress = GetQueryString("address");
+                $(".account-name").html(GetQueryString("name"));
+                $(".account-addr").html(this.cAddress);
+                if(GetQueryString("oldAddress") && !(GetQueryString("oldAddress") == "undefined")){
+                    $(".account-oldAddress").html("<hr/>"+GetQueryString("oldAddress"));
+                    this.oldAddress = GetQueryString("oldAddress");
+                }
+                if(sessionStorage["accAddr"]){
+                    this.updateCoinBalance();
+                }
+                else{
+                    console.error("[Coin] accAddr undefined!");
+                }
+            },
+            setClick: function(){
+                var self = this;
+                $(document).on("click",".assets-li",function(){
+                    var accountType = self.aType;
+                    var shortName = $(this).data("name");
+                    var bType = shortName;
+                    var balance = $(this).data("balance");
+                    var address = $(this).data("address");
+                    var contractAddr = $(this).data("contractaddr");
+                    var decimal = $(this).data("decimal");
+                    if(accountType === "ETH" && shortName !== "ETH"){
+                        bType = "ERC"
+                    }
+                    window.location.href = "transfer.html?accountType="+accountType
+                        +"&balance="+balance
+                        +"&address="+address
+                        +"&oldAddress="+self.oldAddress
+                        +"&contractAddr="+contractAddr
+                        +"&bType="+bType
+                        +"&cType="+shortName
+                        +"&decimal="+decimal;
+                });
+
+                $("#getBalance").on("click", function(){
+                    self.updateCoinBalance();
+                })
+            },
+            updateCoinBalance: function(){
+                var self = this;
+                layer.open({
+                    type: 2
+                    ,content: 'loading…'
+                });
+                var data = ellipal.getCoinBalance("", self.cType, self.cAddress);
+                if(data.status){
+                    layer.closeAll();
+                    var list = data.data.dataList;
+                    console.log("[Coin] getBalance list:" + JSON.stringify(list));
+                    $(".account-assets").html(data.data.balanceTotalUSD);
+                    $(".assets-list").children().remove();
+                    for(var i = 0; i < list.length; i++){
+                        $(".assets-list").append('<li class="assets-li"'+
+                            ' data-type="'+list[i].cType+ '"' +
+                            ' data-name="'+list[i].symbol+ '"' +
+                            ' data-balance="'+list[i].balance+ '"' +
+                            ' data-address="'+list[i].address+ '"' +
+                            ' data-contractAddr="'+list[i].contractAddr+ '"' +
+                            ' data-decimal="'+list[i].decimal+ '"' +
+                            '>'+
+                            '<div class="fl assets-img"><img src="'+list[i].logo+'"/></div>'+
+                            '<div class="fl assets-name">'+list[i].symbol+'</div>'+
+                            '<div class="fr assets-count">'+utils.toFixNum(list[i].balance)+'</div>'+
+                            '<div class="fr assets-worth">$'+list[i].usdValue+'</div>'+
+                            '<span class="fr triangle_right"></span>'+
+                        '</li>');   
+                    }
+                }else{
+                    layer.open({
+                        content: data.code +':'+ data.msg
+                        ,btn: 'OK'
+                        ,end: function(){
+                            sessionStorage["accAddr"] = "";
+                            self.setUi();
+                        }
+                    });
+                }
+            }
+        }
+        Coin.init();
+    </script>
+</body>
+</html>

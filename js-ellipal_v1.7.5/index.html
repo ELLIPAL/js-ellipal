@@ -1,0 +1,156 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Home</title>
+	<meta name="renderer" content="webkit">
+  	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  	<meta http-equiv="Access-Control-Allow-Origin" content="*" />
+  	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="./css/reset.css">
+	<link rel="stylesheet" type="text/css" href="./css/lib/layui.css"  media="all">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+
+	<style type="text/css">
+	.home{ max-width: 500px; margin: 0 auto}
+	.sync-box{position: relative; width: 88%; top: 4.5rem; margin: 0 auto;}
+	.sync-box button{ width:100%; height: 0.9rem; line-height: 0.9rem; font-size: .35rem}
+
+	.account-box{ padding: .2rem}
+	.account-info{ margin-bottom: .4rem }
+	.account-name{ font-size: .4rem; font-weight: bold; margin-bottom: .2rem;}
+	.account-total{font-weight: bold;}	
+	.account-list{border-top: 1px solid #ddd;}
+	.account-list{ background-color: #f7f7f7;}
+	.account-list li{ position: relative; height: 1rem; line-height: 1rem;padding: .05rem .2rem; border-bottom: 1px solid #ddd;cursor: pointer;}
+
+	.version{ position: fixed; width: 100%; bottom: 0; text-align: center; color:#999;}
+	</style>
+</head>
+<body>
+	<div class="home">
+		<div class="sync-box none">
+			<div class="main-body">
+				<button class="layui-btn layui-btn-normal" id="sync-btn">Connect Cold Wallet</button>
+			</div>
+		</div>
+
+		<div class="account-box none">
+			<div class="top-banner">
+				<button class="layui-btn layui-btn-normal layui-btn-sm fl reset">Exit</button>
+				Account  information
+				<button class="layui-btn layui-btn-normal layui-btn-sm fr refresh">Refresh</button>
+			</div>
+			<div class="main-body">
+				<div class="account-info">
+					<div class="account-name">--</div>
+					<hr>
+					<div class="account-total">Total Assets：$<span class="account-assets"></span></div>
+				</div>
+				<div class=" account-panel">
+					<ul class="account-list">
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	<p class="version">--</p>
+
+    <script type="text/javascript" src="./js/lib/layer_mobile/layer.js"></script>
+  	<script type="text/javascript" src="./js/jquery.min.js"></script>
+	<script type="text/javascript" src="./js/Ellipal.js"></script>
+  	<script type="text/javascript" src="./js/Global.js"></script>
+  	<script type="text/javascript" src="./js/Utils.js"></script>
+	<script type="text/javascript">
+		var Home = {
+			accAddr: undefined,
+			acc: undefined,
+			name: undefined,
+			init: function(){
+				this.setClick();
+				this.setUi();
+			},
+			setUi: function(){
+				this.acc = sessionStorage["acc"];
+				this.accAddr = sessionStorage["accAddr"];
+				this.name = sessionStorage["accName"];
+				if(this.accAddr && this.accAddr != "undefined" && this.acc && this.acc != "undefined"){
+					$(".sync-box").addClass("none");
+					$(".version").addClass("none");
+					$(".account-box").removeClass("none");
+					$(".account-name").html(this.name);
+					this.updateAccountBalance();
+
+				}else{
+					 $(".sync-box").removeClass("none");
+					 $(".version").removeClass("none");
+					 $(".account-box").addClass("none");
+				}
+				$(".version").html("v " + ellipal.getApiVersion());
+			},
+			setClick: function(){
+				var self = this;
+				$(document).on("click",".account-li",function(e){
+					var cType = $(this).data("type");
+					var address = $(this).data("address");
+					var oldAddress = $(this).data("oldaddress");
+					var contractAddr = $(this).data("contractAddr");
+					sessionStorage["pubkey"] = $(this).data("pubkey");
+					window.location.href = "coin.html?cType="+cType
+							+"&address="+address
+							+"&contractAddr="+contractAddr
+							+"&oldAddress="+oldAddress
+							+"&name="+self.name;
+				});
+				$(".reset").on("click", function(){
+					for(var i = 0; i < ell.STORAGE_CLEAR_ARRAY.length; i++){
+                        sessionStorage[ell.STORAGE_CLEAR_ARRAY[i]] = "";
+                    }
+                    sessionStorage["acc"] = "";
+                    sessionStorage["accAddr"] = "";
+					self.setUi();
+				})
+				$(".refresh").on("click", function(){
+					self.updateAccountBalance();
+				})
+				$("#sync-btn").on("click", function(){
+					if(CheckApiKey.check()){
+						window.location.href = "scan.html?scanType=" + ell.SCAN_TYPE_SYNC_COLD_WALLET;
+					}
+					else{
+						CheckApiKey.init();
+					}
+				})
+			},
+			updateAccountBalance: function(){
+				//postData（类型+|+钱包地址+|+地址来源，半角竖线分割，多个用&符号分割）
+				var postData = sessionStorage["acc"];
+				var data = ellipal.getAccountBalance("", postData);
+				$(".account-assets").html(data.data.balanceTotalUSD);
+				$(".account-list").children().remove();
+				var list = data.data.dataList;
+				console.log("[Index] list:" + JSON.stringify(list));
+				for(var i = 0; i < list.length; i++){
+					var obj = utils.getInfoByAccAddr(sessionStorage["accAddr"], list[i].cType);
+					$(".account-list").append('<li class="account-li"'+
+						' data-type="'+list[i].cType+ '"' +
+						' data-name="'+list[i].symbol+ '"' +
+						' data-balance="'+list[i].balance+ '"' +
+						' data-pubkey="'+ obj.pubkey + '"' +
+						' data-address="'+list[i].address+ '"' +
+						' data-oldAddress="'+ obj.legacyAddr + '"' +
+						' data-contractAddr="'+list[i].contractAddr+ '"' +
+						'>'+
+						'<div class="fl fb">'+list[i].cType+'</div>'+
+						'<div class="fr">$'+list[i].usdValue+'</div>'+
+						'<span class="fr"></span>'+
+					'</li>');	
+				}
+			}
+		}
+		Home.init();
+
+	</script>
+</body>
+</html>
